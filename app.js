@@ -1,69 +1,119 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-import { collection, addDoc, getFirestore } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js"; 
+import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBR9wc81pZ7-Sa_fVcRQKE-VCMbAh4Z3Wo",
-  authDomain: "smitb10-8d5cb.firebaseapp.com",
-  projectId: "smitb10-8d5cb",
-  storageBucket: "smitb10-8d5cb.appspot.com",
-  messagingSenderId: "282733667161",
-  appId: "1:282733667161:web:6646aeef6f51da1be7e248",
-  measurementId: "G-T4HJE3VGH3"
+    apiKey: "AIzaSyDspTWO119IWDst4GrXDZDiWKbEL88EHss",
+    authDomain: "my-project-e5963.firebaseapp.com",
+    projectId: "my-project-e5963",
+    storageBucket: "my-project-e5963.appspot.com",
+    messagingSenderId: "906727194454",
+    appId: "1:906727194454:web:5a43d180f0f647733960f7",
+    measurementId: "G-MKFDPZ9V5F"
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app)
+const db = getFirestore(app);
+const ids = []  
+
+// ======== TODO =========
+
+async function AddTodo() {
+
+    let Getinp = document.querySelector("#GetInp");
+    // Getinp.value = '';
+    const docRef = await addDoc(collection(db, "todos"), {
+        Task: Getinp.value,
+        Time: new Date().toLocaleString(),
+    });
+    Getinp.value = '';
 
 
+    console.log("Document written with ID: ", docRef.id);
 
-
-const  addTodo = async() => {
- try{
-   var todo =  document.getElementById("todo")
-   var list = document.getElementById("list")
-   var li = document.createElement("li")
-   var text = document.createTextNode(todo.value)
-   const docRef = await addDoc(collection(db, "todos"), {
-    Task : todo.value ,
-    // country: "Japan"
-  });
-
-  console.log("Document written with ID: ", docRef.id);
-}catch(err){
-    console.log(err)
-}
-   li.appendChild(text)
-   var delButton = document.createElement("button")
-   delButton.setAttribute("onclick" , "delTodo()")
-   var delText = document.createTextNode("Delete")
-   delButton.appendChild(delText)
-   var editButton = document.createElement("button")
-   editButton.setAttribute("onclick" , "editTodo()")
-   var editText = document.createTextNode("Edit")
-   editButton.appendChild(editText)
-   li.appendChild(delButton)
-   li.appendChild(editButton)
-   list.appendChild(li)
-//    list.after(li)
-   todo.value = "" 
 
 }
 
 
-function delTodo(){
-    event.target.parentNode.remove()
+
+
+
+function getData() {
+    let ul = document.querySelector("#getul");
+
+    
+    onSnapshot(collection(db, 'todos'), (data) => {
+        data.docChanges().forEach((newData) => {
+
+            ids.push(newData.doc.id)
+
+            if (newData.type == 'removed') {
+
+                let del = document.getElementById(newData.doc.id)
+                del.remove()
+
+            }
+            else if (newData.type == 'added'){
+                ul.innerHTML += `
+                <li id=${newData.doc.id}>${newData.doc.data().Task} <br> ${newData.doc.data().Time}  <button onclick="delTodo('${newData.doc.id}')" >Delete</button> <button  onclick="editTodo(this,'${newData.doc.id}')" >Edit</button> <br><br> </li>
+                `
+                console.log(newData.doc.data())
+
+            }
+         
+
+        })
+    })
+
 }
 
-function editTodo(){
-    var editValue = prompt('Enter Edit value')
-    event.target.parentNode.firstChild.nodeValue = editValue
+getData();
+
+async function delTodo(id) {
+    await deleteDoc(doc(db, "todos", id));
 }
 
-function deleteTodo(){
-    list.innerHTML =  ''
+
+async function editTodo(e,id) {
+
+    var editVal = prompt("Enter Edit Value");
+    e.parentNode.firstChild.nodeValue = editVal;
+    // console.log(e); 
+
+    await updateDoc(doc(db, "todos", id), {
+        Task: editVal,
+        Time: new Date().toLocaleString(),
+
+    });
+
 }
-// ===== window ===== (to ignore onclick events in all functions)
-window.addTodo = addTodo
-window.editTodo = editTodo
+
+
+async function DelAll(){
+    
+    var list = document.getElementById("getul");
+    list.innerHTML = "";
+    // console.log(ids)
+    for(var i = 0 ; i < ids.length ; i++ ){
+        await deleteDoc(doc(db, "todos", ids[i]));
+    }
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// ========= WINDOW ===========
+
+
+window.AddTodo = AddTodo
+window.getData = getData
 window.delTodo = delTodo
-window.deleteTodo = deleteTodo
+window.editTodo = editTodo
+window. DelAll =  DelAll
